@@ -18,7 +18,41 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(rclcpp_component REQUIRED)
+find_package(rclcpp_components REQUIRED)
+find_package(geometry_msgs REQUIRED)
+
+include_directories(
+  include
+)
+
+add_library(robotx_twist_controller_component SHARED
+  src/robotx_twist_controller_component.cpp
+)
+target_compile_definitions(robotx_twist_controller_component PRIVATE "ROBOTX_TWIST_CONTROLLER_ROBOTX_TWIST_CONTROLLER_COMPONENT_BUILDING_DLL")
+target_link_libraries(robotx_twist_controller_component ${quaternion_operation_LIBRARIES})
+ament_target_dependencies(robotx_twist_controller_component
+  rclcpp rclcpp_components)
+
+add_executable(robotx_twist_controller_node
+  src/robotx_twist_controller_node.cpp
+)
+target_link_libraries(robotx_twist_controller_node robotx_twist_controller_component ${quaternion_operation_LIBRARIES})
+ament_target_dependencies(robotx_twist_controller_node
+  rclcpp rclcpp_components)
+
+rclcpp_components_register_nodes(robotx_twist_controller_component
+  "robotx_twist_controller::RobotXTwistControllerComponent")
+
+install(TARGETS
+  robotx_twist_controller_node
+  DESTINATION lib/robotx_twist_controller
+)
+install(TARGETS
+  robotx_twist_controller_component
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin)
+ament_export_libraries(robotx_twist_controller_component)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
