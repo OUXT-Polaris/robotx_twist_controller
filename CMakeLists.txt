@@ -20,6 +20,9 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 include_directories(
   include
@@ -31,14 +34,14 @@ add_library(robotx_twist_controller_component SHARED
 target_compile_definitions(robotx_twist_controller_component PRIVATE "ROBOTX_TWIST_CONTROLLER_ROBOTX_TWIST_CONTROLLER_COMPONENT_BUILDING_DLL")
 target_link_libraries(robotx_twist_controller_component ${quaternion_operation_LIBRARIES})
 ament_target_dependencies(robotx_twist_controller_component
-  rclcpp rclcpp_components)
+  rclcpp rclcpp_components geometry_msgs tf2 tf2_ros tf2_geometry_msgs)
 
 add_executable(robotx_twist_controller_node
   src/robotx_twist_controller_node.cpp
 )
 target_link_libraries(robotx_twist_controller_node robotx_twist_controller_component ${quaternion_operation_LIBRARIES})
 ament_target_dependencies(robotx_twist_controller_node
-  rclcpp rclcpp_components)
+  rclcpp rclcpp_components geometry_msgs tf2 tf2_ros tf2_geometry_msgs)
 
 rclcpp_components_register_nodes(robotx_twist_controller_component
   "robotx_twist_controller::RobotXTwistControllerComponent")
@@ -53,6 +56,13 @@ install(TARGETS
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)
 ament_export_libraries(robotx_twist_controller_component)
+
+#############
+## Install ##
+#############
+install(DIRECTORY launch config
+  DESTINATION share/${PROJECT_NAME}
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

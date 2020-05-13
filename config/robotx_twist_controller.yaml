@@ -1,0 +1,10 @@
+robotx_twist_controller:
+  ros__parameters:
+    cog_parent_frame_id: base_link
+    cog_position_x: 0.1
+    cog_position_y: 0.0
+    cog_position_z: 0.1
+    cog_orientation_x: 0.0
+    cog_orientation_y: 0.0
+    cog_orientation_z: 0.0
+    cog_orientation_w: 1.0

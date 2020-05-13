@@ -60,6 +60,11 @@ extern "C" {
 
 #include <rclcpp/rclcpp.hpp>
 #include <geometry_msgs/msg/twist.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/transform_listener.h>
+
+#include <boost/optional.hpp>
 
 namespace robotx_twist_controller
 {
@@ -68,9 +73,19 @@ class RobotXTwistControllerComponent : public rclcpp::Node
 public:
   ROBOTX_TWIST_CONTROLLER_ROBOTX_TWIST_CONTROLLER_COMPONENT_PUBLIC
   explicit RobotXTwistControllerComponent(const rclcpp::NodeOptions & options);
+
 private:
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr target_twist_sub_;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr current_twist_sub_;
+  void currentTwistCallback(const geometry_msgs::msg::Twist::SharedPtr data);
+  void targetTwistCallback(const geometry_msgs::msg::Twist::SharedPtr data);
+  geometry_msgs::msg::PoseStamped cog_pose_;
+  rclcpp::TimerBase::SharedPtr timer_;
+  boost::optional<geometry_msgs::msg::Twist> current_twist_, target_twist_;
+  void update();
+  tf2_ros::Buffer buffer_;
+  tf2_ros::TransformListener listener_;
+  tf2_ros::TransformBroadcaster broadcaster_;
 };
 }
 
