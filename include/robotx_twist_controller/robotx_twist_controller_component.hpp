@@ -95,7 +95,7 @@ private:
     std::string frame_id,
     builtin_interfaces::msg::Time stamp);
   std::string left_engine_link_, right_engine_link_;
-  double current_left_turust_, current_right_turust_;
+  double current_left_turust_, current_right_turust_, current_alpha_;
 };
 }  // namespace robotx_twist_controller
 

@@ -45,6 +45,7 @@ RobotXTwistControllerComponent::RobotXTwistControllerComponent(const rclcpp::Nod
   get_parameter("right_engine_link", right_engine_link_);
   current_left_turust_ = 0.0;
   current_right_turust_ = 0.0;
+  current_alpha_ = 0.0;
   target_twist_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
     "target_twist", 1,
     std::bind(&RobotXTwistControllerComponent::targetTwistCallback, this, std::placeholders::_1));
@@ -52,7 +53,7 @@ RobotXTwistControllerComponent::RobotXTwistControllerComponent(const rclcpp::Nod
     "current_twist", 1,
     std::bind(&RobotXTwistControllerComponent::currentTwistCallback, this, std::placeholders::_1));
   timer_ =
-    this->create_wall_timer(30ms, std::bind(&RobotXTwistControllerComponent::update, this));
+    this->create_wall_timer(20ms, std::bind(&RobotXTwistControllerComponent::update, this));
 }
 
 geometry_msgs::msg::TransformStamped RobotXTwistControllerComponent::getTransformFromCogFrame(
@@ -80,6 +81,14 @@ void RobotXTwistControllerComponent::update()
   transform_stamped.transform.rotation = cog_pose_.pose.orientation;
   broadcaster_.sendTransform(transform_stamped);
 
+  if (!current_twist_ || !target_twist_) {
+    return;
+  }
+
+  double x_desired = (target_twist_.get().linear.x - current_twist_.get().linear.x) / 50;
+  double y_desired = (target_twist_.get().linear.y - current_twist_.get().linear.y) / 50;
+  double n_desired = (target_twist_.get().angular.z - current_twist_.get().angular.z) / 50;
+
   auto left_engine_transform = getTransformFromCogFrame(left_engine_link_, stamp);
   auto right_engine_transform = getTransformFromCogFrame(left_engine_link_, stamp);
   double r1x = -1 * left_engine_transform.transform.translation.x;
@@ -95,6 +104,19 @@ void RobotXTwistControllerComponent::update()
   ceres::Problem problem;
   double t1 = current_left_turust_;
   double t2 = current_right_turust_;
+  double alpha = current_alpha_;
+  problem.AddResidualBlock(FuncX::Create(x_desired), NULL, &t1, &t2, &alpha);
+  problem.AddResidualBlock(FuncY::Create(y_desired), NULL, &t1, &t2, &alpha);
+  problem.AddResidualBlock(FuncN::Create(n_desired, r1x, r1y, r2x, r2y), NULL, &t1, &t2, &alpha);
+  problem.AddResidualBlock(FuncAlpha::Create(), NULL, &alpha);
+  Solver::Options options;
+  options.linear_solver_type = ceres::DENSE_QR;
+  options.minimizer_progress_to_stdout = true;
+  Solver::Summary summary;
+  Solve(options, &problem, &summary);
+  current_left_turust_ = t1;
+  current_right_turust_ = t2;
+  current_alpha_ = alpha;
 }
 
 void RobotXTwistControllerComponent::currentTwistCallback(
