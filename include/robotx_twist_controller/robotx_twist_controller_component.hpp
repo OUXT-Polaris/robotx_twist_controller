@@ -63,8 +63,13 @@ extern "C" {
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/transform_listener.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #include <boost/optional.hpp>
+
+#include <ceres/ceres.h>
+
+#include <string>
 
 namespace robotx_twist_controller
 {
@@ -86,7 +91,11 @@ private:
   tf2_ros::Buffer buffer_;
   tf2_ros::TransformListener listener_;
   tf2_ros::TransformBroadcaster broadcaster_;
+  geometry_msgs::msg::TransformStamped getTransformFromCogFrame(
+    std::string frame_id,
+    builtin_interfaces::msg::Time stamp);
+  std::string left_engine_link_, right_engine_link_;
 };
-}
+}  // namespace robotx_twist_controller
 
 #endif  // ROBOTX_TWIST_CONTROLLER__ROBOTX_TWIST_CONTROLLER_COMPONENT_HPP_

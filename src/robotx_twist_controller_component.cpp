@@ -13,12 +13,13 @@
 // limitations under the License.
 
 #include <robotx_twist_controller/robotx_twist_controller_component.hpp>
+#include <string>
 
 namespace robotx_twist_controller
 {
 RobotXTwistControllerComponent::RobotXTwistControllerComponent(const rclcpp::NodeOptions & options)
-: Node("robotx_twist_controller", options), broadcaster_(this), buffer_(get_clock()), listener_(
-    buffer_)
+: Node("robotx_twist_controller", options), buffer_(get_clock()), listener_(
+    buffer_), broadcaster_(this)
 {
   using namespace std::chrono_literals;
   declare_parameter("cog_parent_frame_id", "base_link");
@@ -37,6 +38,10 @@ RobotXTwistControllerComponent::RobotXTwistControllerComponent(const rclcpp::Nod
   get_parameter("cog_orientation_z", cog_pose_.pose.orientation.z);
   declare_parameter("cog_orientation_w", 1.0);
   get_parameter("cog_orientation_w", cog_pose_.pose.orientation.w);
+  declare_parameter("left_engine_link", "left_engine_link");
+  get_parameter("left_engine_link", left_engine_link_);
+  declare_parameter("right_engine_link", "right_engine_link");
+  get_parameter("right_engine_link", right_engine_link_);
   target_twist_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
     "target_twist", 1,
     std::bind(&RobotXTwistControllerComponent::targetTwistCallback, this, std::placeholders::_1));
@@ -47,11 +52,23 @@ RobotXTwistControllerComponent::RobotXTwistControllerComponent(const rclcpp::Nod
     this->create_wall_timer(10ms, std::bind(&RobotXTwistControllerComponent::update, this));
 }
 
+geometry_msgs::msg::TransformStamped RobotXTwistControllerComponent::getTransformFromCogFrame(
+  std::string frame_id, builtin_interfaces::msg::Time stamp)
+{
+  tf2::TimePoint time_point = tf2::TimePoint(
+    std::chrono::seconds(stamp.sec) +
+    std::chrono::nanoseconds(stamp.nanosec));
+  geometry_msgs::msg::TransformStamped transform_stamped =
+    buffer_.lookupTransform("cog", frame_id, time_point, tf2::durationFromSec(1.0));
+  return transform_stamped;
+}
+
 void RobotXTwistControllerComponent::update()
 {
   // broadcast tf
   geometry_msgs::msg::TransformStamped transform_stamped;
-  transform_stamped.header.stamp = get_clock()->now();
+  auto stamp = get_clock()->now();
+  transform_stamped.header.stamp = stamp;
   transform_stamped.header.frame_id = cog_pose_.header.frame_id;
   transform_stamped.child_frame_id = "cog";
   transform_stamped.transform.translation.x = cog_pose_.pose.position.x;
@@ -59,6 +76,13 @@ void RobotXTwistControllerComponent::update()
   transform_stamped.transform.translation.z = cog_pose_.pose.position.z;
   transform_stamped.transform.rotation = cog_pose_.pose.orientation;
   broadcaster_.sendTransform(transform_stamped);
+
+  auto left_engine_transform = getTransformFromCogFrame(left_engine_link_, stamp);
+  auto right_engine_transform = getTransformFromCogFrame(left_engine_link_, stamp);
+  double r1x = -1 * left_engine_transform.transform.translation.x;
+  double r2x = -1 * right_engine_transform.transform.translation.x;
+  double r1y = left_engine_transform.transform.translation.y;
+  double r2y = right_engine_transform.transform.translation.y;
 }
 
 void RobotXTwistControllerComponent::currentTwistCallback(
@@ -72,4 +96,4 @@ void RobotXTwistControllerComponent::targetTwistCallback(
 {
   target_twist_ = *data;
 }
-}
+}  // namespace robotx_twist_controller

@@ -23,23 +23,25 @@ find_package(geometry_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(Ceres REQUIRED)
 
 include_directories(
   include
+  ${CERESS_INCLUDE_DIRS}
 )
 
 add_library(robotx_twist_controller_component SHARED
   src/robotx_twist_controller_component.cpp
 )
 target_compile_definitions(robotx_twist_controller_component PRIVATE "ROBOTX_TWIST_CONTROLLER_ROBOTX_TWIST_CONTROLLER_COMPONENT_BUILDING_DLL")
-target_link_libraries(robotx_twist_controller_component ${quaternion_operation_LIBRARIES})
+target_link_libraries(robotx_twist_controller_component ${CERES_LIBRARIES})
 ament_target_dependencies(robotx_twist_controller_component
   rclcpp rclcpp_components geometry_msgs tf2 tf2_ros tf2_geometry_msgs)
 
 add_executable(robotx_twist_controller_node
   src/robotx_twist_controller_node.cpp
 )
-target_link_libraries(robotx_twist_controller_node robotx_twist_controller_component ${quaternion_operation_LIBRARIES})
+target_link_libraries(robotx_twist_controller_node robotx_twist_controller_component ${CERES_LIBRARIES})
 ament_target_dependencies(robotx_twist_controller_node
   rclcpp rclcpp_components geometry_msgs tf2 tf2_ros tf2_geometry_msgs)
 
