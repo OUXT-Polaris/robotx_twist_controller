@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <robotx_twist_controller/robotx_twist_controller_component.hpp>
+#include <ceres/ceres.h>
 #include <string>
 
 namespace robotx_twist_controller
@@ -42,6 +43,8 @@ RobotXTwistControllerComponent::RobotXTwistControllerComponent(const rclcpp::Nod
   get_parameter("left_engine_link", left_engine_link_);
   declare_parameter("right_engine_link", "right_engine_link");
   get_parameter("right_engine_link", right_engine_link_);
+  current_left_turust_ = 0.0;
+  current_right_turust_ = 0.0;
   target_twist_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
     "target_twist", 1,
     std::bind(&RobotXTwistControllerComponent::targetTwistCallback, this, std::placeholders::_1));
@@ -49,7 +52,7 @@ RobotXTwistControllerComponent::RobotXTwistControllerComponent(const rclcpp::Nod
     "current_twist", 1,
     std::bind(&RobotXTwistControllerComponent::currentTwistCallback, this, std::placeholders::_1));
   timer_ =
-    this->create_wall_timer(10ms, std::bind(&RobotXTwistControllerComponent::update, this));
+    this->create_wall_timer(30ms, std::bind(&RobotXTwistControllerComponent::update, this));
 }
 
 geometry_msgs::msg::TransformStamped RobotXTwistControllerComponent::getTransformFromCogFrame(
@@ -83,6 +86,15 @@ void RobotXTwistControllerComponent::update()
   double r2x = -1 * right_engine_transform.transform.translation.x;
   double r1y = left_engine_transform.transform.translation.y;
   double r2y = right_engine_transform.transform.translation.y;
+
+  using ceres::AutoDiffCostFunction;
+  using ceres::CostFunction;
+  using ceres::Problem;
+  using ceres::Solver;
+  using ceres::Solve;
+  ceres::Problem problem;
+  double t1 = current_left_turust_;
+  double t2 = current_right_turust_;
 }
 
 void RobotXTwistControllerComponent::currentTwistCallback(

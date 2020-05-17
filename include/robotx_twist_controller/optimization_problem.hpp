@@ -22,7 +22,7 @@ namespace robotx_twist_controller
 struct FuncX
 {
 public:
-  FuncX(double x_desired)
+  explicit FuncX(double x_desired)
   : x_desired_(x_desired) {}
   template<typename T>
   bool operator()(
@@ -31,8 +31,14 @@ public:
     const T * const alpha,
     T * residual) const
   {
-    residual[0] = (t1[0] + t2[0]) * std::cos(alpha[0]) - x_desired_;
+    residual[0] = (t1[0] + t2[0]) * cos(alpha[0]) - x_desired_;
     return true;
+  }
+  static ceres::CostFunction * Create(
+    const double x_desired
+  )
+  {
+    return new ceres::AutoDiffCostFunction<FuncX, 1, 1, 1, 1>(new FuncX(x_desired));
   }
 
 private:
@@ -42,7 +48,7 @@ private:
 struct FuncY
 {
 public:
-  FuncY(double y_desired)
+  explicit FuncY(double y_desired)
   : y_desired_(y_desired) {}
   template<typename T>
   bool operator()(
@@ -51,8 +57,14 @@ public:
     const T * const alpha,
     T * residual) const
   {
-    residual[0] = (t1[0] - t2[0]) * std::sin(alpha[0]) - y_desired_;
+    residual[0] = (t1[0] - t2[0]) * sin(alpha[0]) - y_desired_;
     return true;
+  }
+  static ceres::CostFunction * Create(
+    const double y_desired
+  )
+  {
+    return new ceres::AutoDiffCostFunction<FuncY, 1, 1, 1, 1>(new FuncY(y_desired));
   }
 
 private:
@@ -71,10 +83,21 @@ public:
     const T * const alpha,
     T * residual) const
   {
-    residual[0] = r1x_ * t1[0] * std::sin(alpha[0]) - r1y_ * t1[0] * std::cos(alpha[0]) + r2x_ *
-      t2[0] * std::sin(alpha[0]) - r2y_ * t2[0] * std::cos(alpha[0]) -
+    residual[0] = r1x_ * t1[0] * sin(alpha[0]) - r1y_ * t1[0] * cos(alpha[0]) + r2x_ *
+      t2[0] * sin(alpha[0]) - r2y_ * t2[0] * cos(alpha[0]) -
       n_desired_;
     return true;
+  }
+  static ceres::CostFunction * Create(
+    const double n_desired,
+    const double r1x,
+    const double r1y,
+    const double r2x,
+    const double r2y
+  )
+  {
+    return new ceres::AutoDiffCostFunction<FuncN, 1, 1, 1,
+             1>(new FuncN(n_desired, r1x, r1y, r2x, r2y));
   }
 
 private:
@@ -96,8 +119,12 @@ public:
     residual[0] = alpha[0];
     return true;
   }
+  static ceres::CostFunction * Create()
+  {
+    return new ceres::AutoDiffCostFunction<FuncAlpha, 1, 1>(new FuncAlpha());
+  }
 };
 
-}  // robotx_twist_controller
+}  // namespace robotx_twist_controller
 
 #endif  // ROBOTX_TWIST_CONTROLLER__OPTIMIZATION_PROBLEM_HPP_
