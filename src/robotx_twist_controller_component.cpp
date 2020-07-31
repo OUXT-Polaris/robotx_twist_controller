@@ -111,6 +111,7 @@ void RobotXTwistControllerComponent::update()
   problem.AddResidualBlock(FuncAlpha::Create(), NULL, &alpha);
   Solver::Options options;
   options.linear_solver_type = ceres::DENSE_QR;
+  options.logging_type = ceres::SILENT;
   options.minimizer_progress_to_stdout = true;
   Solver::Summary summary;
   Solve(options, &problem, &summary);
